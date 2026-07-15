@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08080b" />
+  <title>Codex — AI Dashboard</title>
+  <style>
+    :root{
+      --bg:#070708;
+      --panel:#101014;
+      --panel-2:#15151b;
+      --panel-3:#1b1b23;
+      --border:rgba(255,255,255,.08);
+      --text:#f6f6f8;
+      --muted:#92929f;
+      --purple:#8b5cf6;
+      --purple-2:#a78bfa;
+      --purple-soft:rgba(139,92,246,.14);
+      --green:#38d39f;
+      --orange:#ffb454;
+      --red:#ff6b81;
+      --blue:#62a8ff;
+      --shadow:0 18px 60px rgba(0,0,0,.34);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-height:100vh;
+      overflow-x:hidden;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 82% -8%, rgba(139,92,246,.14), transparent 30%),
+        radial-gradient(circle at 8% 100%, rgba(98,168,255,.05), transparent 28%),
+        var(--bg);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    button,input,textarea,select{font:inherit}
+    button{color:inherit}
+    a{color:inherit;text-decoration:none}
+    .app{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
+
+    .sidebar{
+      position:sticky;top:0;height:100vh;
+      padding:22px 16px;
+      border-right:1px solid var(--border);
+      background:rgba(8,8,11,.82);
+      backdrop-filter:blur(20px);
+      display:flex;flex-direction:column;z-index:20;
+    }
+    .brand{display:flex;align-items:center;gap:12px;padding:0 10px 24px}
+    .logo{
+      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+      background:linear-gradient(145deg,#9b75ff,#6d3be8);
+      box-shadow:0 0 34px rgba(139,92,246,.32);
+      font-weight:900;font-size:18px;
+    }
+    .brand strong{font-size:18px;letter-spacing:-.02em}
+    .brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+    .nav-label{color:#676773;font-size:10px;font-weight:800;letter-spacing:.14em;padding:0 12px 9px}
+    .nav{display:flex;flex-direction:column;gap:5px}
+    .nav-btn{
+      border:1px solid transparent;background:transparent;width:100%;
+      display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;
+      color:#9e9eaa;cursor:pointer;text-align:left;transition:.2s ease;
+    }
+    .nav-btn:hover{background:rgba(255,255,255,.04);color:#fff}
+    .nav-btn.active{
+      background:linear-gradient(90deg,rgba(139,92,246,.2),rgba(139,92,246,.06));
+      border-color:rgba(139,92,246,.2);color:#fff;
+    }
+    .nav-icon{width:20px;text-align:center;font-size:16px}
+    .sidebar-bottom{margin-top:auto}
+    .upgrade{
+      margin:18px 0 12px;padding:15px;border:1px solid rgba(139,92,246,.2);
+      border-radius:15px;background:linear-gradient(145deg,rgba(139,92,246,.17),rgba(139,92,246,.04));
+    }
+    .upgrade strong{display:block;font-size:13px}
+    .upgrade p{margin:7px 0 12px;color:#aaa4bd;font-size:11px;line-height:1.5}
+    .mini-btn{
+      width:100%;border:0;border-radius:10px;padding:9px 12px;
+      background:#fff;color:#111;font-weight:800;font-size:12px;cursor:pointer;
+    }
+    .profile{
+      display:flex;align-items:center;gap:10px;padding:10px;border-radius:13px;
+      border:1px solid var(--border);background:rgba(255,255,255,.025);
+    }
+    .avatar{
+      width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+      background:linear-gradient(145deg,#2d2d39,#15151a);font-size:12px;font-weight:800;
+    }
+    .profile-info{min-width:0;flex:1}
+    .profile-info b{display:block;font-size:12px}
+    .profile-info span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+
+    .main{min-width:0}
+    .topbar{
+      height:78px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--border);background:rgba(8,8,11,.6);
+      backdrop-filter:blur(16px);position:sticky;top:0;z-index:10;
+    }
+    .top-left{display:flex;align-items:center;gap:12px}
+    .mobile-menu{display:none}
+    .page-title{font-size:18px;font-weight:750;letter-spacing:-.02em}
+    .page-subtitle{font-size:11px;color:var(--muted);margin-top:3px}
+    .top-actions{display:flex;align-items:center;gap:9px}
+    .icon-btn,.ghost-btn,.primary-btn{
+      border:1px solid var(--border);background:rgba(255,255,255,.035);
+      border-radius:11px;cursor:pointer;transition:.2s ease;
+    }
+    .icon-btn{width:38px;height:38px;display:grid;place-items:center}
+    .icon-btn:hover,.ghost-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+    .ghost-btn,.primary-btn{padding:10px 14px;font-size:12px;font-weight:700}
+    .primary-btn{
+      border-color:transparent;background:linear-gradient(135deg,#9569ff,#7541e8);
+      box-shadow:0 8px 24px rgba(139,92,246,.2);
+    }
+    .content{padding:26px 28px 40px;max-width:1600px;margin:auto}
+    .section{display:none;animation:fade .28s ease}
+    .section.active{display:block}
+    @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+    .hero{
+      position:relative;overflow:hidden;padding:28px;border:1px solid rgba(139,92,246,.18);
+      border-radius:24px;background:
+        linear-gradient(110deg,rgba(139,92,246,.15),rgba(255,255,255,.025) 46%,rgba(98,168,255,.04));
+      box-shadow:var(--shadow);margin-bottom:18px;
+    }
+    .hero:after{
+      content:"";position:absolute;width:300px;height:300px;border-radius:50%;
+      right:-90px;top:-150px;background:rgba(139,92,246,.13);filter:blur(16px)
+    }
+    .eyebrow{color:var(--purple-2);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .hero h1{font-size:30px;letter-spacing:-.04em;margin:9px 0 8px}
+    .hero p{color:#aaaab6;max-width:590px;font-size:13px;line-height:1.6;margin:0}
+    .hero-actions{display:flex;gap:9px;margin-top:19px}
+    .grid{display:grid;gap:16px}
+    .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .two{grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);margin-top:16px}
+    .three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{
+      border:1px solid var(--border);border-radius:var(--radius);
+      background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.016));
+      box-shadow:0 12px 35px rgba(0,0,0,.15);
+    }
+    .stat{padding:18px}
+    .stat-top{display:flex;justify-content:space-between;align-items:center}
+    .stat-label{color:var(--muted);font-size:11px}
+    .stat-icon{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:var(--purple-soft)}
+    .stat-value{font-size:24px;font-weight:800;letter-spacing:-.035em;margin:17px 0 7px}
+    .trend{font-size:10px;color:var(--green)}
+    .trend.down{color:var(--orange)}
+    .card-head{display:flex;justify-content:space-between;align-items:center;padding:18px 19px 12px}
+    .card-title{font-size:13px;font-weight:750}
+    .card-desc{font-size:10px;color:var(--muted);margin-top:4px}
+    .card-body{padding:8px 19px 19px}
+    .range{display:flex;gap:4px;background:rgba(255,255,255,.03);padding:3px;border-radius:9px}
+    .range button{border:0;background:transparent;color:var(--muted);font-size:9px;padding:5px 7px;border-radius:6px}
+    .range button.active{background:rgba(255,255,255,.08);color:#fff}
+    .chart{height:220px;position:relative;display:flex;align-items:flex-end;padding:18px 4px 24px;gap:10px}
+    .chart:before{
+      content:"";position:absolute;inset:12px 0 24px;
+      background:repeating-linear-gradient(to bottom,transparent 0,transparent 42px,rgba(255,255,255,.045) 43px);
+    }
+    .bar-wrap{height:100%;flex:1;display:flex;align-items:flex-end;position:relative;z-index:1}
+    .bar{
+      width:100%;border-radius:6px 6px 2px 2px;min-height:8px;
+      background:linear-gradient(to top,rgba(139,92,246,.45),#9b73ff);
+      box-shadow:0 0 15px rgba(139,92,246,.12);transition:.25s;
+    }
+    .bar:hover{filter:brightness(1.25);transform:translateY(-2px)}
+    .bar-label{position:absolute;bottom:-18px;width:100%;text-align:center;color:#71717d;font-size:9px}
+    .activity{display:flex;flex-direction:column;gap:4px}
+    .activity-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:11px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .activity-item:last-child{border-bottom:0}
+    .activity-icon{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.045);display:grid;place-items:center;font-size:13px}
+    .activity-main b{font-size:11px;display:block}
+    .activity-main span,.activity-time{font-size:9px;color:var(--muted);margin-top:3px}
+    .usage-ring{
+      width:122px;height:122px;border-radius:50%;margin:9px auto 18px;
+      background:conic-gradient(var(--purple) 0 72%,rgba(255,255,255,.07) 72% 100%);
+      display:grid;place-items:center;
+    }
+    .usage-ring:before{content:"";width:88px;height:88px;border-radius:50%;background:#111116;position:absolute}
+    .usage-ring strong{position:relative;font-size:22px}
+    .usage-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+    .progress{height:7px;background:rgba(255,255,255,.06);border-radius:20px;overflow:hidden;margin:8px 0 18px}
+    .progress > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--purple),#b59aff)}
+
+    /* Chat */
+    .chat-layout{display:grid;grid-template-columns:260px minmax(0,1fr);height:calc(100vh - 144px);min-height:620px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:#0d0d11}
+    .chat-side{border-right:1px solid var(--border);padding:14px;background:rgba(255,255,255,.014)}
+    .new-chat{width:100%;padding:11px;border:1px solid rgba(139,92,246,.25);background:var(--purple-soft);border-radius:11px;text-align:left;font-size:11px;font-weight:700}
+    .chat-search{width:100%;margin:11px 0;border:1px solid var(--border);background:#121217;border-radius:10px;padding:10px;color:#fff;outline:none;font-size:11px}
+    .conversation{padding:10px;border-radius:11px;margin:5px 0;cursor:pointer}
+    .conversation.active,.conversation:hover{background:rgba(255,255,255,.05)}
+    .conversation b{font-size:10px;display:block}
+    .conversation span{font-size:9px;color:var(--muted)}
+    .chat-main{display:grid;grid-template-rows:auto 1fr auto;min-width:0}
+    .chat-header{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .model-select{border:1px solid var(--border);background:#16161d;color:#fff;border-radius:10px;padding:9px 11px;font-size:11px}
+    .messages{padding:24px;overflow:auto;display:flex;flex-direction:column;gap:20px}
+    .message{display:flex;gap:12px;max-width:850px}
+    .message.user{margin-left:auto;flex-direction:row-reverse}
+    .message-avatar{flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:var(--purple-soft);display:grid;place-items:center;font-size:10px}
+    .bubble{padding:12px 14px;border-radius:14px;background:#17171d;border:1px solid var(--border);font-size:12px;line-height:1.65;color:#d7d7de}
+    .user .bubble{background:linear-gradient(135deg,rgba(139,92,246,.26),rgba(139,92,246,.12));border-color:rgba(139,92,246,.24)}
+    .composer{padding:15px 18px;border-top:1px solid var(--border)}
+    .composer-box{display:flex;align-items:flex-end;gap:9px;border:1px solid var(--border);background:#15151b;border-radius:14px;padding:9px}
+    .composer textarea{flex:1;resize:none;min-height:38px;max-height:120px;border:0;outline:0;background:transparent;color:#fff;padding:9px;font-size:12px}
+    .send{width:38px;height:38px;border:0;border-radius:11px;background:var(--purple);cursor:pointer}
+
+    /* Documents */
+    .section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px}
+    .section-head h2{font-size:22px;margin:0 0 6px;letter-spacing:-.03em}
+    .section-head p{margin:0;color:var(--muted);font-size:11px}
+    .dropzone{padding:34px;text-align:center;border:1px dashed rgba(139,92,246,.35);background:rgba(139,92,246,.055);border-radius:18px;margin-bottom:16px}
+    .drop-icon{font-size:27px;margin-bottom:10px}
+    .dropzone b{font-size:13px}
+    .dropzone p{font-size:10px;color:var(--muted);margin:6px 0 14px}
+    .table{overflow:hidden}
+    .table-row{display:grid;grid-template-columns:minmax(220px,1.6fr) .65fr .55fr .55fr 80px;gap:12px;align-items:center;padding:13px 16px;border-top:1px solid rgba(255,255,255,.05);font-size:10px}
+    .table-row.header{border-top:0;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}
+    .file-name{display:flex;gap:10px;align-items:center;font-weight:700}
+    .file-icon{width:31px;height:31px;border-radius:9px;background:rgba(255,255,255,.05);display:grid;place-items:center}
+    .badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:20px;font-size:9px;background:rgba(56,211,159,.1);color:var(--green)}
+    .badge.processing{color:var(--orange);background:rgba(255,180,84,.1)}
+    .dots{letter-spacing:2px;color:var(--muted)}
+
+    /* Images */
+    .image-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px}
+    .generator{padding:18px;height:max-content}
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:10px;color:#b4b4be;margin-bottom:7px;font-weight:700}
+    .field input,.field textarea,.field select{
+      width:100%;border:1px solid var(--border);background:#15151b;color:#fff;
+      border-radius:10px;padding:11px;outline:none;font-size:11px;
+    }
+    .field textarea{min-height:110px;resize:vertical}
+    .segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+    .segmented button{border:1px solid var(--border);background:#15151b;border-radius:9px;padding:8px;font-size:9px;color:var(--muted)}
+    .segmented button.active{border-color:rgba(139,92,246,.4);background:var(--purple-soft);color:#fff}
+    .generate-btn{width:100%;border:0;border-radius:11px;padding:12px;background:linear-gradient(135deg,#9569ff,#7342e6);font-weight:800;font-size:11px}
+    .gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .generated-img{
+      min-height:260px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:17px;
+      background:
+        radial-gradient(circle at 28% 28%,rgba(255,255,255,.2),transparent 14%),
+        radial-gradient(circle at 60% 45%,rgba(139,92,246,.65),transparent 28%),
+        linear-gradient(145deg,#17152a,#08080d 62%,#271640);
+    }
+    .generated-img:nth-child(2){background:radial-gradient(circle at 68% 33%,rgba(98,168,255,.36),transparent 22%),linear-gradient(145deg,#08131c,#181022,#060607)}
+    .generated-img:nth-child(3){background:radial-gradient(circle at 40% 25%,rgba(255,180,84,.4),transparent 20%),linear-gradient(145deg,#25140c,#131016,#09090b)}
+    .generated-img:nth-child(4){background:radial-gradient(circle at 55% 50%,rgba(56,211,159,.25),transparent 26%),linear-gradient(145deg,#071714,#181223,#08080b)}
+    .img-overlay{position:absolute;inset:auto 10px 10px;display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:11px;background:rgba(9,9,12,.7);backdrop-filter:blur(12px);font-size:9px;opacity:0;transform:translateY(6px);transition:.2s}
+    .generated-img:hover .img-overlay{opacity:1;transform:none}
+
+    /* Automation / settings */
+    .automation-card{padding:17px}
+    .automation-top{display:flex;justify-content:space-between;gap:12px}
+    .automation-icon{width:38px;height:38px;border-radius:12px;background:var(--purple-soft);display:grid;place-items:center}
+    .automation-card h3{font-size:12px;margin:14px 0 6px}
+    .automation-card p{font-size:10px;line-height:1.5;color:var(--muted);min-height:30px}
+    .automation-meta{display:flex;justify-content:space-between;margin-top:16px;padding-top:13px;border-top:1px solid rgba(255,255,255,.06);font-size:9px;color:var(--muted)}
+    .switch{position:relative;width:36px;height:20px;background:#2b2b34;border-radius:20px;cursor:pointer;transition:.2s}
+    .switch:after{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s}
+    .switch.on{background:var(--purple)}
+    .switch.on:after{left:19px}
+    .analytics-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:16px}
+    .donut-wrap{display:flex;align-items:center;gap:26px;padding:15px 0}
+    .donut{width:130px;height:130px;border-radius:50%;background:conic-gradient(var(--purple) 0 48%,var(--blue) 48% 74%,var(--green) 74% 91%,var(--orange) 91%);position:relative}
+    .donut:after{content:"";position:absolute;inset:25px;border-radius:50%;background:#121217}
+    .legend{display:flex;flex-direction:column;gap:10px}
+    .legend-item{display:flex;align-items:center;gap:9px;font-size:10px;color:#c4c4cc}
+    .legend-dot{width:8px;height:8px;border-radius:50%;background:var(--purple)}
+    .legend-item:nth-child(2) .legend-dot{background:var(--blue)}
+    .legend-item:nth-child(3) .legend-dot{background:var(--green)}
+    .legend-item:nth-child(4) .legend-dot{background:var(--orange)}
+    .key-card{padding:17px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:center}
+    .key-logo{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.05);display:grid;place-items:center;font-weight:900}
+    .key-info b{font-size:11px;display:block}
+    .key-info code{font-size:9px;color:var(--muted)}
+    .settings-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px}
+    .settings-nav{padding:9px;height:max-content}
+    .settings-nav button{width:100%;border:0;background:transparent;color:var(--muted);text-align:left;padding:10px;border-radius:9px;font-size:10px}
+    .settings-nav button.active{background:var(--purple-soft);color:#fff}
+    .settings-panel{padding:20px}
+    .profile-editor{display:flex;align-items:center;gap:15px;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:18px}
+    .big-avatar{width:64px;height:64px;border-radius:18px;background:linear-gradient(145deg,#2c2c38,#15151a);display:grid;place-items:center;font-weight:900}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .theme-options{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .theme-option{padding:10px;border:1px solid var(--border);border-radius:12px;cursor:pointer}
+    .theme-option.active{border-color:var(--purple)}
+    .theme-preview{height:74px;border-radius:8px;background:#09090b;border:1px solid #27272f;display:grid;grid-template-columns:20px 1fr;gap:5px;padding:6px}
+    .theme-preview.light{background:#f1f1f4}
+    .theme-preview.auto{background:linear-gradient(120deg,#0a0a0d 50%,#f1f1f4 50%)}
+    .theme-option span{display:block;font-size:9px;text-align:center;margin-top:7px}
+
+    .toast{position:fixed;right:24px;bottom:24px;padding:12px 15px;border-radius:12px;background:#1a1a21;border:1px solid var(--border);box-shadow:var(--shadow);font-size:11px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s;z-index:50}
+    .toast.show{opacity:1;transform:none}
+
+    @media (max-width:1100px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .three,.analytics-grid{grid-template-columns:repeat(2,1fr)}
+      .two{grid-template-columns:1fr}
+      .image-layout{grid-template-columns:280px 1fr}
+    }
+    @media (max-width:820px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:fixed;left:-270px;width:256px;transition:.25s}
+      .sidebar.open{left:0}
+      .mobile-menu{display:grid}
+      .topbar{padding:0 16px}
+      .content{padding:20px 16px 32px}
+      .top-actions .ghost-btn{display:none}
+      .chat-layout{grid-template-columns:1fr;height:calc(100vh - 125px)}
+      .chat-side{display:none}
+      .image-layout,.settings-layout{grid-template-columns:1fr}
+      .settings-nav{display:flex;overflow:auto}
+      .settings-nav button{white-space:nowrap}
+    }
+    @media (max-width:560px){
+      .stats,.three,.analytics-grid,.gallery,.form-grid,.theme-options{grid-template-columns:1fr}
+      .hero{padding:22px}
+      .hero h1{font-size:24px}
+      .table-row{grid-template-columns:minmax(190px,1fr) 80px}
+      .table-row>*:nth-child(2),.table-row>*:nth-child(3),.table-row>*:nth-child(4){display:none}
+      .section-head{align-items:flex-start;gap:12px}
+      .section-head .primary-btn{white-space:nowrap}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div><strong>Codex</strong><small>AI Dashboard</small></div>
+    </div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="dashboard"><span class="nav-icon">⌂</span>Dashboard</button>
+      <button class="nav-btn" data-page="chat"><span class="nav-icon">◌</span>AI Chat</button>
+      <button class="nav-btn" data-page="documents"><span class="nav-icon">▤</span>Documents</button>
+      <button class="nav-btn" data-page="images"><span class="nav-icon">◇</span>AI Images</button>
+      <button class="nav-btn" data-page="automations"><span class="nav-icon">⚡</span>Automations</button>
+      <button class="nav-btn" data-page="analytics"><span class="nav-icon">⌁</span>Analytics</button>
+      <button class="nav-btn" data-page="keys"><span class="nav-icon">⌘</span>API Keys</button>
+      <button class="nav-btn" data-page="settings"><span class="nav-icon">⚙</span>Settings</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="upgrade">
+        <strong>Codex Pro</strong>
+        <p>Больше моделей, файлов и автоматизаций.</p>
+        <button class="mini-btn" onclick="notify('Тариф Pro скоро будет доступен')">Обновить тариф</button>
+      </div>
+      <div class="profile">
+        <div class="avatar">JG</div>
+        <div class="profile-info"><b>Jason Green</b><span>Free workspace</span></div>
+        <i class="status-dot"></i>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="top-left">
+        <button class="icon-btn mobile-menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
+          <div class="page-subtitle" id="pageSubtitle">Обзор вашей AI-активности</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="notify('Новых уведомлений нет')">⌕</button>
+        <button class="ghost-btn" onclick="notify('Документация открыта')">Документация</button>
+        <button class="icon-btn" onclick="openPage('settings')">⚙</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="section active" id="dashboard">
+        <div class="hero">
+          <div class="eyebrow">AI Workspace</div>
+          <h1>Добрый вечер, Jason.</h1>
+          <p>Управляйте моделями, документами, изображениями и автоматизациями из единого рабочего пространства.</p>
+          <div class="hero-actions">
+            <button class="primary-btn" onclick="openPage('chat')">Начать новый чат</button>
+            <button class="ghost-btn" onclick="openPage('automations')">Создать автоматизацию</button>
+          </div>
+        </div>
+
+        <div class="grid stats">
+          <div class="card stat"><div class="stat-top"><span class="stat-label">AI-запросы</span><span class="stat-icon">◌</span></div><div class="stat-value">1,284</div><div class="trend">↑ 18.2% за месяц</div></div>
+          <div class="card stat"><div class="stat-top"><span class="stat-label">Обработано файлов</span><span class="stat-icon">▤</span></div><div class="stat-value">47</div><div class="trend">↑ 8 новых</div></div>
+          <div class="card stat"><div class="stat-top"><span class="stat-label">Создано изображений</span><span class="stat-icon">◇</span></div><div class="stat-value">96</div><div class="trend">↑ 24.7% за месяц</div></div>
+          <div class="card stat"><div class="stat-top"><span class="stat-label">Расходы</span><span class="stat-icon">₽</span></div><div class="stat-value">$18.42</div><div class="trend down">72% от лимита</div></div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Активность</div><div class="card-desc">Количество AI-запросов за последние 7 дней</div></div><div class="range"><button>1Д</button><button class="active">7Д</button><button>30Д</button></div></div>
+            <div class="card-body">
+              <div class="chart">
+                <div class="bar-wrap"><div class="bar" style="height:44%"></div><span class="bar-label">Пн</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:67%"></div><span class="bar-label">Вт</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:53%"></div><span class="bar-label">Ср</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:82%"></div><span class="bar-label">Чт</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:71%"></div><span class="bar-label">Пт</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:92%"></div><span class="bar-label">Сб</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:62%"></div><span class="bar-label">Вс</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Использование лимита</div><div class="card-desc">Месячный объём токенов</div></div></div>
+            <div class="card-body">
+              <div class="usage-ring"><strong>72%</strong></div>
+              <div class="usage-meta"><span>7.2M токенов</span><span>10M</span></div>
+              <div class="progress"><i style="width:72%"></i></div>
+              <button class="mini-btn" onclick="notify('Лимиты обновляются 1 августа')">Управление тарифом</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Недавняя активность</div><div class="card-desc">Последние действия в рабочем пространстве</div></div></div>
+            <div class="card-body activity">
+              <div class="activity-item"><div class="activity-icon">◌</div><div class="activity-main"><b>Новый диалог с GPT-5</b><span>Разработка лендинга для AI-сервиса</span></div><div class="activity-time">2 мин</div></div>
+              <div class="activity-item"><div class="activity-icon">▤</div><div class="activity-main"><b>Документ обработан</b><span>marketing-report.pdf · 18 страниц</span></div><div class="activity-time">24 мин</div></div>
+              <div class="activity-item"><div class="activity-icon">◇</div><div class="activity-main"><b>Создано 4 изображения</b><span>Cyberpunk workspace concept</span></div><div class="activity-time">1 ч</div></div>
+              <div class="activity-item"><div class="activity-icon">⚡</div><div class="activity-main"><b>Автоматизация выполнена</b><span>Ежедневная сводка новостей</span></div><div class="activity-time">3 ч</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Популярные модели</div><div class="card-desc">Распределение запросов</div></div></div>
+            <div class="card-body">
+              <div class="usage-meta"><span>GPT-5</span><span>48%</span></div><div class="progress"><i style="width:48%"></i></div>
+              <div class="usage-meta"><span>Claude Sonnet</span><span>26%</span></div><div class="progress"><i style="width:26%;background:#62a8ff"></i></div>
+              <div class="usage-meta"><span>Gemini Pro</span><span>17%</span></div><div class="progress"><i style="width:17%;background:#38d39f"></i></div>
+              <div class="usage-meta"><span>Другие</span><span>9%</span></div><div class="progress"><i style="width:9%;background:#ffb454"></i></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="chat">
+        <div class="chat-layout">
+          <aside class="chat-side">
+            <button class="new-chat" onclick="newChat()">＋ Новый диалог</button>
+            <input class="chat-search" placeholder="Поиск диалогов..." />
+            <div class="conversation active"><b>AI Dashboard</b><span>Сегодня · GPT-5</span></div>
+            <div class="conversation"><b>Портфолио разработчика</b><span>Вчера · Claude</span></div>
+            <div class="conversation"><b>Анализ конкурентов</b><span>12 июля · Gemini</span></div>
+            <div class="conversation"><b>Telegram-бот</b><span>10 июля · GPT-5</span></div>
+          </aside>
+          <div class="chat-main">
+            <div class="chat-header">
+              <div><div class="card-title">AI Dashboard</div><div class="card-desc">Контекст: 12.4K токенов</div></div>
+              <select class="model-select"><option>GPT-5</option><option>Claude Sonnet</option><option>Gemini Pro</option><option>DeepSeek</option></select>
+            </div>
+            <div class="messages" id="messages">
+              <div class="message"><div class="message-avatar">C</div><div class="bubble">Привет! Я Codex — ваш универсальный AI-ассистент. Чем могу помочь сегодня?</div></div>
+              <div class="message user"><div class="message-avatar">JG</div><div class="bubble">Помоги продумать структуру AI Dashboard.</div></div>
+              <div class="message"><div class="message-avatar">C</div><div class="bubble">Предлагаю разделить продукт на восемь основных модулей: общий Dashboard, AI Chat, Documents, AI Images, Automations, Analytics, API Keys и Settings. Такая структура масштабируется и остаётся понятной пользователю.</div></div>
+            </div>
+            <div class="composer">
+              <div class="composer-box"><button class="icon-btn" style="width:36px;height:36px">＋</button><textarea id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea><button class="send" onclick="sendMessage()">↑</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="documents">
+        <div class="section-head"><div><h2>Documents</h2><p>Загружайте, анализируйте и суммаризируйте файлы с помощью AI.</p></div><button class="primary-btn" onclick="notify('Выберите файл на устройстве')">＋ Загрузить файл</button></div>
+        <div class="dropzone"><div class="drop-icon">⇧</div><b>Перетащите файлы сюда</b><p>PDF, DOCX, TXT, CSV или изображения · до 50 МБ</p><button class="ghost-btn" onclick="notify('Окно выбора файла открыто')">Выбрать файл</button></div>
+        <div class="card table">
+          <div class="table-row header"><span>Название</span><span>Тип</span><span>Размер</span><span>Статус</span><span></span></div>
+          <div class="table-row"><div class="file-name"><span class="file-icon">PDF</span>marketing-report.pdf</div><span>Отчёт</span><span>4.8 МБ</span><span><i class="badge">Готово</i></span><span class="dots">•••</span></div>
+          <div class="table-row"><div class="file-name"><span class="file-icon">DOC</span>product-strategy.docx</div><span>Документ</span><span>1.2 МБ</span><span><i class="badge">Готово</i></span><span class="dots">•••</span></div>
+          <div class="table-row"><div class="file-name"><span class="file-icon">CSV</span>analytics-june.csv</div><span>Таблица</span><span>840 КБ</span><span><i class="badge processing">Анализ</i></span><span class="dots">•••</span></div>
+          <div class="table-row"><div class="file-name"><span class="file-icon">TXT</span>meeting-notes.txt</div><span>Текст</span><span>42 КБ</span><span><i class="badge">Готово</i></span><span class="dots">•••</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="images">
+        <div class="section-head"><div><h2>AI Images</h2><p>Создавайте и редактируйте изображения по текстовому описанию.</p></div><button class="ghost-btn" onclick="notify('История генераций открыта')">История</button></div>
+        <div class="image-layout">
+          <div class="card generator">
+            <div class="field"><label>Описание изображения</label><textarea id="imagePrompt" placeholder="Например: футуристичный AI-интерфейс, чёрный фон, фиолетовое свечение..."></textarea></div>
+            <div class="field"><label>Модель</label><select><option>Codex Image Pro</option><option>DALL·E</option><option>Stable Diffusion</option></select></div>
+            <div class="field"><label>Формат</label><div class="segmented"><button class="active">1:1</button><button>16:9</button><button>9:16</button></div></div>
+            <div class="field"><label>Стиль</label><select><option>Автоматически</option><option>Фотореализм</option><option>3D Render</option><option>Digital Art</option></select></div>
+            <button class="generate-btn" onclick="generateImage()">✦ Сгенерировать</button>
+          </div>
+          <div class="gallery" id="gallery">
+            <div class="generated-img"><div class="img-overlay"><span>1024×1024 · 2 мин назад</span><button class="icon-btn">↓</button></div></div>
+            <div class="generated-img"><div class="img-overlay"><span>1024×1024 · 8 мин назад</span><button class="icon-btn">↓</button></div></div>
+            <div class="generated-img"><div class="img-overlay"><span>1024×1024 · вчера</span><button class="icon-btn">↓</button></div></div>
+            <div class="generated-img"><div class="img-overlay"><span>1024×1024 · вчера</span><button class="icon-btn">↓</button></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="automations">
+        <div class="section-head"><div><h2>Automations</h2><p>Автоматизируйте повторяющиеся задачи и управляйте AI-ботами.</p></div><button class="primary-btn" onclick="notify('Новая автоматизация создана')">＋ Новая автоматизация</button></div>
+        <div class="grid three">
+          <div class="card automation-card"><div class="automation-top"><div class="automation-icon">☀</div><div class="switch on" onclick="toggleSwitch(this)"></div></div><h3>Ежедневная AI-сводка</h3><p>Собирает главные новости об AI и отправляет краткий отчёт.</p><div class="automation-meta"><span>Каждый день · 09:00</span><span>Успешно</span></div></div>
+          <div class="card automation-card"><div class="automation-top"><div class="automation-icon">✉</div><div class="switch on" onclick="toggleSwitch(this)"></div></div><h3>Обработка входящих заявок</h3><p>Классифицирует заявки и создаёт персональные ответы.</p><div class="automation-meta"><span>При получении письма</span><span>24 запуска</span></div></div>
+          <div class="card automation-card"><div class="automation-top"><div class="automation-icon">⌁</div><div class="switch" onclick="toggleSwitch(this)"></div></div><h3>Мониторинг конкурентов</h3><p>Проверяет сайты конкурентов и фиксирует изменения.</p><div class="automation-meta"><span>Каждые 6 часов</span><span>Пауза</span></div></div>
+          <div class="card automation-card"><div class="automation-top"><div class="automation-icon">▤</div><div class="switch on" onclick="toggleSwitch(this)"></div></div><h3>Суммаризация документов</h3><p>Создаёт краткую выжимку из новых файлов в облаке.</p><div class="automation-meta"><span>При загрузке файла</span><span>12 запусков</span></div></div>
+          <div class="card automation-card"><div class="automation-top"><div class="automation-icon">◉</div><div class="switch on" onclick="toggleSwitch(this)"></div></div><h3>Telegram AI-бот</h3><p>Отвечает клиентам и передаёт сложные запросы менеджеру.</p><div class="automation-meta"><span>Работает постоянно</span><span>Online</span></div></div>
+          <div class="card automation-card" style="display:grid;place-items:center;min-height:180px;border-style:dashed;cursor:pointer" onclick="notify('Открыт каталог шаблонов')"><div style="text-align:center"><div style="font-size:24px;color:var(--purple)">＋</div><h3>Создать автоматизацию</h3><p style="min-height:0">С нуля или из готового шаблона</p></div></div>
+        </div>
+      </section>
+
+      <section class="section" id="analytics">
+        <div class="section-head"><div><h2>Analytics</h2><p>Следите за использованием моделей, скоростью и расходами.</p></div><button class="ghost-btn" onclick="notify('Отчёт экспортирован')">⇩ Экспорт отчёта</button></div>
+        <div class="grid analytics-grid">
+          <div class="card stat"><div class="stat-label">Всего запросов</div><div class="stat-value">12,840</div><div class="trend">↑ 18.2%</div></div>
+          <div class="card stat"><div class="stat-label">Среднее время ответа</div><div class="stat-value">1.8 сек</div><div class="trend">↓ 0.3 сек</div></div>
+          <div class="card stat"><div class="stat-label">Расходы за месяц</div><div class="stat-value">$18.42</div><div class="trend down">Прогноз: $25.60</div></div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Запросы и расходы</div><div class="card-desc">Динамика за текущий месяц</div></div></div>
+            <div class="card-body"><div class="chart">
+              <div class="bar-wrap"><div class="bar" style="height:32%"></div><span class="bar-label">1</span></div><div class="bar-wrap"><div class="bar" style="height:45%"></div><span class="bar-label">4</span></div><div class="bar-wrap"><div class="bar" style="height:58%"></div><span class="bar-label">7</span></div><div class="bar-wrap"><div class="bar" style="height:48%"></div><span class="bar-label">10</span></div><div class="bar-wrap"><div class="bar" style="height:73%"></div><span class="bar-label">13</span></div><div class="bar-wrap"><div class="bar" style="height:88%"></div><span class="bar-label">16</span></div><div class="bar-wrap"><div class="bar" style="height:78%"></div><span class="bar-label">19</span></div><div class="bar-wrap"><div class="bar" style="height:95%"></div><span class="bar-label">22</span></div>
+            </div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Использование моделей</div><div class="card-desc">Доля от всех запросов</div></div></div>
+            <div class="card-body donut-wrap"><div class="donut"></div><div class="legend"><div class="legend-item"><i class="legend-dot"></i>GPT-5 · 48%</div><div class="legend-item"><i class="legend-dot"></i>Claude · 26%</div><div class="legend-item"><i class="legend-dot"></i>Gemini · 17%</div><div class="legend-item"><i class="legend-dot"></i>Другие · 9%</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="keys">
+        <div class="section-head"><div><h2>API Keys</h2><p>Подключайте внешние AI-модели и сервисы к рабочему пространству.</p></div><button class="primary-btn" onclick="notify('Форма добавления API-ключа открыта')">＋ Добавить ключ</button></div>
+        <div class="grid">
+          <div class="card key-card"><div class="key-logo">◎</div><div class="key-info"><b>OpenAI</b><code>sk-proj-••••••••••••8K2m</code></div><div><span class="badge">Подключено</span> <button class="icon-btn" onclick="notify('Настройки ключа открыты')">•••</button></div></div>
+          <div class="card key-card"><div class="key-logo">A</div><div class="key-info"><b>Anthropic</b><code>sk-ant-••••••••••••7Qp4</code></div><div><span class="badge">Подключено</span> <button class="icon-btn" onclick="notify('Настройки ключа открыты')">•••</button></div></div>
+          <div class="card key-card"><div class="key-logo">G</div><div class="key-info"><b>Google AI</b><code>AIza••••••••••••••P9x</code></div><div><span class="badge">Подключено</span> <button class="icon-btn" onclick="notify('Настройки ключа открыты')">•••</button></div></div>
+          <div class="card key-card"><div class="key-logo">M</div><div class="key-info"><b>Make</b><code>Не подключено</code></div><div><button class="ghost-btn" onclick="notify('Подключение Make запущено')">Подключить</button></div></div>
+        </div>
+        <div class="card" style="margin-top:16px;padding:18px;border-color:rgba(255,180,84,.18);background:rgba(255,180,84,.04)">
+          <div class="card-title">Безопасность API-ключей</div><div class="card-desc" style="line-height:1.6;margin-top:7px">Ключи должны храниться только на сервере в переменных окружения. Никогда не добавляйте реальные секретные ключи прямо в HTML или клиентский JavaScript.</div>
+        </div>
+      </section>
+
+      <section class="section" id="settings">
+        <div class="section-head"><div><h2>Settings</h2><p>Управляйте профилем, интерфейсом и параметрами рабочего пространства.</p></div><button class="primary-btn" onclick="notify('Настройки сохранены')">Сохранить</button></div>
+        <div class="settings-layout">
+          <div class="card settings-nav"><button class="active">Профиль</button><button>Внешний вид</button><button>Уведомления</button><button>Безопасность</button><button>Оплата</button></div>
+          <div class="card settings-panel">
+            <div class="profile-editor"><div class="big-avatar">JG</div><div><div class="card-title">Фото профиля</div><div class="card-desc">PNG, JPG · до 5 МБ</div><button class="ghost-btn" style="margin-top:9px" onclick="notify('Выберите новое фото')">Изменить</button></div></div>
+            <div class="form-grid">
+              <div class="field"><label>Имя</label><input value="Jason" /></div>
+              <div class="field"><label>Фамилия</label><input value="Green" /></div>
+              <div class="field"><label>Email</label><input value="jason@example.com" /></div>
+              <div class="field"><label>Язык интерфейса</label><select><option>Русский</option><option>English</option></select></div>
+            </div>
+            <div class="field"><label>Тема интерфейса</label><div class="theme-options">
+              <div class="theme-option active" onclick="selectTheme(this)"><div class="theme-preview"><i></i><i></i></div><span>Тёмная</span></div>
+              <div class="theme-option" onclick="selectTheme(this)"><div class="theme-preview light"><i></i><i></i></div><span>Светлая</span></div>
+              <div class="theme-option" onclick="selectTheme(this)"><div class="theme-preview auto"><i></i><i></i></div><span>Системная</span></div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast">Готово</div>
+
+<script>
+const pageMeta={
+ dashboard:["Dashboard","Обзор вашей AI-активности"],
+ chat:["AI Chat","Общение с несколькими AI-моделями"],
+ documents:["Documents","Анализ и суммаризация файлов"],
+ images:["AI Images","Генерация и редактирование изображений"],
+ automations:["Automations","Управление автоматизациями и ботами"],
+ analytics:["Analytics","Статистика использования и расходов"],
+ keys:["API Keys","Подключение внешних сервисов"],
+ settings:["Settings","Настройки профиля и интерфейса"]
+};
+function openPage(id){
+ document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ const nav=document.querySelector(`[data-page="${id}"]`); if(nav)nav.classList.add("active");
+ document.getElementById("pageTitle").textContent=pageMeta[id][0];
+ document.getElementById("pageSubtitle").textContent=pageMeta[id][1];
+ document.getElementById("sidebar").classList.remove("open");
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>openPage(btn.dataset.page)));
+function notify(text){
+ const t=document.getElementById("toast");t.textContent=text;t.classList.add("show");
+ clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+function toggleSwitch(el){el.classList.toggle("on");notify(el.classList.contains("on")?"Автоматизация включена":"Автоматизация приостановлена")}
+function selectTheme(el){document.querySelectorAll(".theme-option").forEach(x=>x.classList.remove("active"));el.classList.add("active");notify("Тема выбрана")}
+function sendMessage(){
+ const input=document.getElementById("chatInput"),text=input.value.trim();if(!text)return;
+ const messages=document.getElementById("messages");
+ const user=document.createElement("div");user.className="message user";user.innerHTML=`<div class="message-avatar">JG</div><div class="bubble"></div>`;user.querySelector(".bubble").textContent=text;messages.appendChild(user);
+ input.value="";messages.scrollTop=messages.scrollHeight;
+ setTimeout(()=>{const ai=document.createElement("div");ai.className="message";ai.innerHTML=`<div class="message-avatar">C</div><div class="bubble">Это демонстрационный интерфейс. Для настоящих ответов подключите AI API через раздел «API Keys» и серверный обработчик.</div>`;messages.appendChild(ai);messages.scrollTop=messages.scrollHeight},450);
+}
+function newChat(){document.getElementById("messages").innerHTML='<div class="message"><div class="message-avatar">C</div><div class="bubble">Новый диалог создан. Что будем делать?</div></div>';notify("Новый диалог создан")}
+function generateImage(){
+ const p=document.getElementById("imagePrompt").value.trim();
+ notify(p?"Генерация запущена":"Добавьте описание изображения");
+ if(p){setTimeout(()=>notify("Демо-изображение готово"),700)}
+}
+document.querySelectorAll(".segmented button").forEach(b=>b.addEventListener("click",()=>{b.parentElement.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active")}));
+</script>
+</body>
+</html>
